@@ -1,0 +1,129 @@
+//--------------------------------------------------------------------------------------------------
+//= Calc.hsp
+//--------------------------------------------------------------------------------------------------
+//	計算処理
+//--------------------------------------------------------------------------------------------------
+
+	//----------------------------------------------------------------------------------------------
+	//= Sendウィンドウ
+	//----------------------------------------------------------------------------------------------
+		gsel SCR_SEND
+
+			//--------------------------------------------------------------------------------------
+			//= コンボカウンター取得
+			//--------------------------------------------------------------------------------------
+				repeat PLAYER_NUMBER
+					ComboCounterBufMemory(cnt) = ComboCounterBuf(cnt)
+					ReadProcMemory PJProcessID, BaseAddress+ComboCounterAddress(cnt), ComboCounterBuf(cnt), 1
+				loop
+
+			//--------------------------------------------------------------------------------------
+			//= コンボカウンター管理
+			//--------------------------------------------------------------------------------------
+				repeat PLAYER_NUMBER
+					if( ComboCounterFlag(cnt) == FALSE ){
+						if( ComboCounterBuf(cnt) >= CCSTART ){
+							ComboCounter(cnt) = ComboCounterBuf(cnt)
+							ComboCounterPosX(cnt) = CC_POS_X+SHAKE_EFFECT_X
+							ComboCounterPosY(cnt) = CC_POS_Y
+							ComboCounterFrame(cnt) = CC_DELETE_FRAME
+							ComboCounterFlag(cnt) = TRUE
+						}
+					} else {
+						//コンボカウンター中処理
+						if( ComboCounterBuf(cnt) >= CCSTART ){
+							//カウンター始動時にコンボが途切れている場合は一旦FlagをOFF(出現エフェクトを再度表示させるため)
+							if( ComboCounter(cnt) > ComboCounterBuf(cnt) ){
+								ComboCounterFlag(cnt) = FALSE
+							}
+							//1hitごとに揺らす
+							if( ComboCounterBufMemory(cnt) < ComboCounterBuf(cnt) ){
+								ComboCounterPosX(cnt) + SHAKE_EFFECT_X
+								ComboCounterPosY(cnt) + SHAKE_EFFECT_Y
+							}
+							//バッファから反映
+							ComboCounter(cnt) = ComboCounterBuf(cnt)
+						} else {
+							ComboCounterFrame(cnt)--
+							if( ComboCounterFrame(cnt) <= 0 ){
+								ComboCounterFlag(cnt) = FALSE
+							}
+						}
+						//目的座標との距離を求める
+						disX = absf(CC_POS_X-ComboCounterPosX(cnt))
+						disY = absf(CC_POS_Y-ComboCounterPosY(cnt))
+						//移動量計算
+						tmp1 = atan(CC_POS_Y-ComboCounterPosY(cnt), CC_POS_X-ComboCounterPosX(cnt))
+						tmp2 = PI*2+tmp1
+						ComboCounterMoveX(cnt) = cos(tmp2)*(disX/5.0)
+						ComboCounterMoveY(cnt) = sin(tmp2)*(disY/5.0)
+						//移動量が一定以下であれば座標をリストア
+						if( absf(ComboCounterMoveX(cnt)) <= 1.0 ){
+							ComboCounterPosX(cnt) = CC_POS_X
+						}
+						if( absf(ComboCounterMoveY(cnt)) <= 1.0 ){
+							ComboCounterPosY(cnt) = CC_POS_Y
+						}
+						//移動量反映
+						ComboCounterPosX(cnt) + ComboCounterMoveX(cnt)
+						ComboCounterPosY(cnt) + ComboCounterMoveY(cnt)
+					}
+				loop
+
+			//--------------------------------------------------------------------------------------
+			//= コンボカウンター表示フラグ管理
+			//--------------------------------------------------------------------------------------
+				//コンボカウンターが回っているか
+				tmp = 0
+				repeat PLAYER_NUMBER
+					tmp + ComboCounterBuf(cnt)
+				loop
+				//シーン切り替えを検出
+				if( FrameCounter == 0 ){
+					//コンボカウンターが回っている
+					if( tmp != 0 ){
+						ComboCounterShow = FALSE
+						repeat PLAYER_NUMBER
+							ComboCounterFlag(cnt) == FALSE
+						loop
+					}
+				}
+				//コンボカウンターが回っていない
+				if( tmp == 0 ){
+					ComboCounterShow = TRUE
+				}
+
+			//--------------------------------------------------------------------------------------
+			//= フレームカウンター取得
+			//--------------------------------------------------------------------------------------
+				ReadProcMemory PJProcessID, BaseAddress+FrameCounterAddress, FrameCounter, 4
+				//ついでにPJが終了していた場合のフラグを管理
+				if( stat == -1 ){
+					PJEndFlag = TRUE
+				}
+
+	//----------------------------------------------------------------------------------------------
+	//= System
+	//----------------------------------------------------------------------------------------------
+		
+		//------------------------------------------------------------------------------------------
+		//= PJが終了されていた場合
+		//------------------------------------------------------------------------------------------
+			if( PJEndFlag == TRUE ){
+				//画面を初期化
+;				gosub *__ClearScreen: redraw 1: cm_send SCR_SEND
+				if( AutoEndFlagSet == TRUE ){
+					if( AutoEnd == TRUE ){
+						end
+					}
+				} else {
+					//動作記憶処理
+					dialog "Project64k(KVE) の終了を検出しました。\n"+PROGRAM_NAME+" を終了しますか？\n(この設定は保存され、次回以降は同じ動作をします)", 2, ""+PROGRAM_NAME+" "+PROGRAM_VERSION
+					AutoEnd = (stat==6)//はい=1, それ以外=0
+					AutoEndFlagSet = TRUE
+					gosub *__DataSave
+					if( AutoEnd == TRUE ){
+						end
+					}
+				}
+			}

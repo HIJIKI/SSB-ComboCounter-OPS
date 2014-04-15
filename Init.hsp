@@ -1,0 +1,175 @@
+//--------------------------------------------------------------------------------------------------
+//= Init_h.hsp
+//--------------------------------------------------------------------------------------------------
+//	ウィンドウ / バッファ / コンパイルオプションなどの初期化
+//--------------------------------------------------------------------------------------------------
+
+	//----------------------------------------------------------------------------------------------
+	//= コンパイルオプション
+	//----------------------------------------------------------------------------------------------
+		#packopt hide 1
+
+	//----------------------------------------------------------------------------------------------
+	//= JSWプラグインの初期化
+	//----------------------------------------------------------------------------------------------
+;		cm_init
+		//CameloFilterの設定解像度が正しいか確認
+;		if( cm_info(0) != SEND_WINDOW_SIZE_W )||( cm_info(1) != SEND_WINDOW_SIZE_H ){
+;			Titlebar = "Error"
+;			Message = {"CameloFilter の解像度が正しく設定されていません。
+;						CameloFilter の設定を開き、
+;						解像度を640x480に設定してください。"}
+;			dialog Message, 1, Titlebar
+;			end
+;		}
+
+	//----------------------------------------------------------------------------------------------
+	//= 終了処理ラベルを設定
+	//----------------------------------------------------------------------------------------------
+		onexit gosub *__end
+
+	//----------------------------------------------------------------------------------------------
+	//= 設定ファイルをロード
+	//----------------------------------------------------------------------------------------------
+		//存在しなかった場合初期設定をする
+		if( ExistB(INI_FILE_NAME) == FALSE ){
+			//PJ64のパスを求める
+			Titlebar = ""+PROGRAM_NAME+" 初期設定"
+			Message = {"初期設定を行います。
+						Project64k または Project64KVE があるフォルダを
+						選択してください。"}
+			dialog Message, 0, Titlebar
+			//ディレクトリ選択
+			repeat
+				tmp = ""
+				selfolder tmp, "Project64k または Project64KVE があるフォルダを選択してください。"
+				if( stat == 0 ){
+					//PJ/KVEを探す なければ終了(どちらもある場合は若い方が優先される)
+					ExistFileName = "Project64k.exe", "Project64KVE.exe"
+					if( ExistB(""+tmp+"\\"+ExistFileName(0)) == 1 ){
+						Project64kDirectoryPath = tmp
+						break
+					} else {
+						if( ExistB(""+tmp+"\\"+ExistFileName(1)) == 1 ){
+							Project64kDirectoryPath = tmp
+							break
+						} else {
+							dialog "["+ExistFileName(0)+"]または["+ExistFileName(1)+"]が見つかりません。", 1, ""+PROGRAM_NAME
+						}
+					}
+				} else {
+					Titlebar = "Error"
+					Message = {"ディレクトリが選択されませんでした。
+								アプリケーションを終了します。"}
+					dialog Message, 1, Titlebar
+					end
+				}
+			loop
+			//まずファイルを空で作成
+			tmp = ""
+			notesel tmp
+			notesave ""+INI_FILE_NAME
+			//セーブ
+			gosub *__DataSave
+		}
+		//読み込み
+		gosub *__DataLoad
+
+	//----------------------------------------------------------------------------------------------
+	//= コンボカウンターフォントバッファ初期化
+	//----------------------------------------------------------------------------------------------
+		//ファイルが存在するか確認
+		exist ""+ComboCounterSkinPath
+		if( strsize == -1 ){
+			//存在しなかった場合デフォルトに戻す
+			ComboCounterSkinPath = ""+DEFAULT_COMBO_COUNTER_SKIN_PATH
+		}
+
+		celload ""+ComboCounterSkinPath, SCR_CCFONT
+		celdiv SCR_CCFONT, CCFONT_SIZE_W, CCFONT_SIZE_H
+
+	//----------------------------------------------------------------------------------------------
+	//= PJを実行
+	//----------------------------------------------------------------------------------------------
+		//PJ/KVEを探す なければ終了(どちらもある場合は若い方が優先される)
+		ExistFileName = "Project64k.exe", "Project64KVE.exe"
+		if( ExistB(""+Project64kDirectoryPath+"\\"+ExistFileName(0)) == 1 ){
+			PJFileName = ExistFileName(0)
+		} else {
+			if( ExistB(""+Project64kDirectoryPath+"\\"+ExistFileName(1)) == 1 ){
+				PJFileName = ExistFileName(1)
+			} else {
+				dialog "["+ExistFileName(0)+"]または["+ExistFileName(1)+"]が見つかりません。", 1, ""+PROGRAM_NAME
+				end
+			}
+		}
+		//PJを実行する
+		DirMem = dir_cur
+		chdir ""+Project64kDirectoryPath
+		PJProcessID = PIDExec(""+PJFileName)
+		chdir DirMem
+
+	//----------------------------------------------------------------------------------------------
+	//= ベースアドレスの取得
+	//----------------------------------------------------------------------------------------------
+		dim BaseAddress
+		ReadProcMemory PJProcessID, BASE_ADDRESS_P, BaseAddress, 4
+
+#uselib "user32.dll" 
+	#func tGWLA	 "GetWindowLongA" int , int 
+	#func tSWLA	 "SetWindowLongA" int , int , int 
+	#func tSL	 "SetLayeredWindowAttributes" int , int , int , int 
+	#func tSMA   "SendMessageA"   int , int , int , int
+	#func tPMA   "PostMessageA"   int , int , int , int
+	#func tSC     "SetCapture"     int
+	#func tRC	 "ReleaseCapture"
+
+	//----------------------------------------------------------------------------------------------
+	//= Sendウィンドウ初期化
+	//----------------------------------------------------------------------------------------------
+		bgscr SCR_SEND, SEND_WINDOW_SIZE_W, SEND_WINDOW_SIZE_H
+		gsel SCR_SEND, 2
+
+	tGWLA hwnd , -20 
+	tSWLA hwnd , -20 , stat | 0x00080000
+	tSL hwnd , 0 , 0 , 1
+
+	//----------------------------------------------------------------------------------------------
+	//= メインウィンドウ初期化
+	//----------------------------------------------------------------------------------------------
+		screen SCR_MAIN, MAIN_WINDOW_SIZE_W, MAIN_WINDOW_SIZE_H
+		title ""+PROGRAM_NAME+" "+PROGRAM_VERSION
+		syscolor 15: boxf
+		gosub *__SettingWindowObjectInit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		

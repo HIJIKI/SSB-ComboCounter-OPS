@@ -1,0 +1,37 @@
+//--------------------------------------------------------------------------------------------------
+//= PIDExec	指定した実行ファイルを実行し、プロセスIDを取得する
+//--------------------------------------------------------------------------------------------------
+//	実行に成功した場合はプロセスIDを、失敗した場合は-1を返す。
+//--------------------------------------------------------------------------------------------------
+#include "kernel32.as"
+#include "user32.as"
+#module _PIDExec_
+	#defcfunc PIDExec str _filename
+		//ファイルネームが指定されていなければ終了
+		if( strlen(_filename)==0 ) : return -1
+
+		FileName = _filename
+		dim lpsiStartInfo,17   //STARTUPINFO構造体
+		dim lppiProcInfo,4     //PROCESS_INFOMATION構造体
+
+		lpsiStartInfo(11) = 1	//STARTF_USESHOWWINDOW
+		lpsiStartInfo(12) = 1	//swmode
+
+		CreateProcess 0,varptr(FileName),0,0,0,0,0,0,varptr(lpsiStartInfo),varptr(lppiProcInfo)
+		hprocess=lppiProcInfo(0)
+		WaitForInputIdle hprocess, 0xffffffff
+
+		ProcessID = lppiProcInfo(2)
+
+		dim lpsiStartInfo,0 : dim lppiProcInfo,0
+	return ProcessID
+#global
+
+//--------------------------------------------------------------------------------------------------
+//= サンプル
+//--------------------------------------------------------------------------------------------------
+#if 0
+	path = "notepad.exe"
+	x = PIDExec(path)
+	input x
+#endif

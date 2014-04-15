@@ -1,0 +1,50 @@
+//--------------------------------------------------------------------------------------------------
+//= SSB ComboCounter Module
+//--------------------------------------------------------------------------------------------------
+//	SSB ComboCounter でのみ使用するオリジナル命令 / 関数モジュール
+//--------------------------------------------------------------------------------------------------
+	#module _SSBComboCounterModule_
+
+		//----------------------------------------------------------------------------------------------
+		//= CCDraw	コンボカウンターを描画する
+		//----------------------------------------------------------------------------------------------
+		//	ComboCounterの内容をCCFontでカレントポジションに描画する。
+		//	0～99まで対応
+		//----------------------------------------------------------------------------------------------
+			#deffunc CCDraw int _cc
+				Text = str(limit(_cc, 0, 99))
+				TextLength = strlen(text)
+				//コンボが終了した場合はカウンターを暗く
+				if( ComboCounterBuf@(cnt@) < CCSTART@ ){
+					shadow = 11
+				} else {
+					shadow = 0
+				}
+				x = ginfo_cx	:	y = ginfo_cy
+				repeat TextLength
+					//1桁の場合は右寄せにする
+					if( TextLength == 1 ){
+						x + CCFONT_SIZE_W@
+					}
+					pos x, y
+					put = int(strmid(Text, cnt, 1))
+					color ALPHA_COLOR@
+					gmode 4, , , 255
+					celput SCR_CCFONT@, put+shadow
+					x + CCFONT_SIZE_W@
+				loop
+				pos x, y
+				gcopy SCR_CCFONT@, CCFONT_SIZE_W@*10, CCFONT_SIZE_H@*(shadow != 0), CC_HITCOMBO_SIZE_W@, CC_HITCOMBO_SIZE_H@
+
+			return
+
+		//------------------------------------------------------------------------------------------
+		//= Exist関数
+		//------------------------------------------------------------------------------------------
+			#defcfunc ExistB str _path
+				ret = 0
+				exist _path
+				if( strsize != -1 ){ ret = 1 }
+			return ret
+		
+	#global

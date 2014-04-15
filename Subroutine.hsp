@@ -1,0 +1,218 @@
+//--------------------------------------------------------------------------------------------------
+//= Subroutine.hsp
+//--------------------------------------------------------------------------------------------------
+//	各種サブルーチン
+//--------------------------------------------------------------------------------------------------
+
+	//----------------------------------------------------------------------------------------------
+	//= 終了処理
+	//----------------------------------------------------------------------------------------------
+		*__end
+			if( SkipEndCheck == FALSE ){
+				dialog ""+PROGRAM_NAME+" を終了します。\nよろしいですか？\n(Shiftを押しながら「はい」で次回以降表示しない)", 2, ""+PROGRAM_NAME+" "+PROGRAM_VERSION
+				if( stat == 6 ){
+					//次回以降表示しないようにする
+					getkey ShiftKey ,16
+					if( ShiftKey == TRUE ){
+						SkipEndCheck = TRUE
+					}
+					gosub *__DataSave
+					gosub *__ClearScreen
+					redraw 1
+;					cm_send SCR_SEND
+					end
+				}
+			} else {
+				end
+			}
+		return
+
+	//----------------------------------------------------------------------------------------------
+	//= 背景色で塗りつぶし
+	//----------------------------------------------------------------------------------------------
+		*__ClearScreen
+			color BG_COLOR:boxf
+		return
+
+	//----------------------------------------------------------------------------------------------
+	//= データセーブ
+	//----------------------------------------------------------------------------------------------
+		*__DataSave
+			INIInit ""+INI_FILE_NAME
+			sec = "Project64k Directory"
+			INISet sec, "path",	""+Project64kDirectoryPath
+			sec = "ComboCounterSkin File"
+			INISet sec, "path",	""+ComboCounterSkinPath
+			sec = "General"
+			INISet sec, "SkipEndCheck", ""+SkipEndCheck
+			INISet sec, "AutoEndFlagSet", ""+AutoEndFlagSet
+			INISet sec, "AutoEnd", ""+AutoEnd
+		return
+
+	//----------------------------------------------------------------------------------------------
+	//= データロード
+	//----------------------------------------------------------------------------------------------
+		*__DataLoad
+			INIInit ""+INI_FILE_NAME
+			sec = "Project64k Directory"
+			if( INIGet(sec, "path") )			{ Project64kDirectoryPath = refstr }	else { Project64kDirectoryPath = "(未設定)" }
+			sec = "ComboCounterSkin File"
+			if( INIGet(sec, "path") )			{ ComboCounterSkinPath = refstr }		else { ComboCounterSkinPath = ""+DEFAULT_COMBO_COUNTER_SKIN_PATH }
+			sec = "General"
+			if( INIGet(sec, "SkipEndCheck") )	{ SkipEndCheck = int(refstr) }			else { SkipEndCheck = FALSE }
+			if( INIGet(sec, "AutoEndFlagSet") )	{ AutoEndFlagSet = int(refstr) }		else { AutoEndFlagSet = FALSE }
+			if( INIGet(sec, "AutoEnd") )		{ AutoEnd = int(refstr) }				else { AutoEnd = FALSE }
+		return
+
+	//----------------------------------------------------------------------------------------------
+	//= セッティングウィンドウオブジェクト初期化
+	//----------------------------------------------------------------------------------------------
+		*__SettingWindowObjectInit
+			//PJディレクトリパスグループボックス
+			x = 8:		y = 8
+			w = 384:	h = 64
+			pos x, y
+			objsize w, h
+			winobj "STATIC", "", 0, 0x50000000, w, h, 0, 0
+			pos x, y
+			button "Project64k(KVE) ディレクトリのパス", *__end;ダミー
+			sendmsg objinfo(stat, 2), 244, 7, 1
+			//PJディレクトリパス入力欄
+			x = 24:		y = 32
+			w = 296:	h = 24
+			pos x, y
+			objsize w, h
+			input Project64kDirectoryPath
+			Project64kDirectoryPathInputObjectID = stat
+			objenable Project64kDirectoryPathInputObjectID, 0
+			//PJディレクトリパス変更ボタン
+			x = 320:	y = 32
+			w = 56:		h = 24
+			pos x, y
+			objsize w, h
+			button gosub "変更", *__Project64kDirectoryPathChange
+			//カウンタースキンパスグループボックス
+			x = 8:		y = 80
+			w = 384:	h = 64
+			pos x, y
+			objsize w, h
+			winobj "STATIC", "", 0, 0x50000000, w, h, 0, 0
+			pos x, y
+			button "カウンタースキン のパス", *__end;ダミー
+			sendmsg objinfo(stat, 2), 244, 7, 1
+			//カウンタースキンパス入力欄
+			x = 24:		y = 104
+			w = 296:	h = 24
+			pos x, y
+			objsize w, h
+			input ComboCounterSkinPath
+			ComboCounterSkinPathInputObjectID = stat
+			objenable ComboCounterSkinPathInputObjectID, 0
+			//カウンタースキンパス変更ボタン
+			x = 320:	y = 104
+			w = 56:		h = 24
+			pos x, y
+			objsize w, h
+			button gosub "変更", *__ComboCounterSkinPathChange
+		return
+
+	//----------------------------------------------------------------------------------------------
+	//= PJ64kのディレクトリパスを変更する
+	//----------------------------------------------------------------------------------------------
+		*__Project64kDirectoryPathChange
+			GselMem = ginfo_sel
+			gsel SCR_MAIN
+				tmp = ""
+				selfolder tmp, "Project64k または Project64KVE があるフォルダを選択してください。"
+				if( stat == 0 ){
+					//PJ/KVEを探す なければ終了(どちらもある場合は若い方が優先される)
+					ExistFileName = "Project64k.exe", "Project64KVE.exe"
+					if( ExistB(""+tmp+"\\"+ExistFileName(0)) == 1 ){
+						Project64kDirectoryPath = tmp
+					} else {
+						if( ExistB(""+tmp+"\\"+ExistFileName(1)) == 1 ){
+							Project64kDirectoryPath = tmp
+							//反映について
+							Titlebar = ""+PROGRAM_NAME
+							Message = "設定を反映するには、\nアプリケーションを再起動する必要があります。"
+							dialog Message, 0, Titlebar
+						} else {
+							dialog "["+ExistFileName(0)+"]または["+ExistFileName(1)+"]が見つかりません。", 1, ""+PROGRAM_NAME
+						}
+					}
+					ObjID = Project64kDirectoryPathInputObjectID
+					objprm ObjID, ""+Project64kDirectoryPath
+				}
+			gsel GselMem
+		return
+
+	//----------------------------------------------------------------------------------------------
+	//= コンボカウンタースキンパスを変更する
+	//----------------------------------------------------------------------------------------------
+		*__ComboCounterSkinPathChange
+			GselMem = ginfo_sel
+			gsel SCR_MAIN
+				Titlebar = ""+PROGRAM_NAME
+				Message = "コンボカウンターに使用する画像を選択してください。\n画像の解像度は"+CC_SKIN_SIZE_W+"x"+CC_SKIN_SIZE_H+"である必要があります。\nRGB要素がすべて0(完全な黒)の部分は透明色とみなされます。\n詳しくは「Skin作成について.txt」をご覧ください。"
+				dialog Message, 0, Titlebar
+				//ファイル選択
+				DirMem = dir_cur
+				dialog "bmp;*.png;*.gif;*.jpg", 16, "Skinファイル"
+				chdir DirMem
+				if( stat == 1 ){
+					file = refstr
+					GselMem2 = ginfo_sel
+					buffer SCR_SKIN_CHECK
+						picload ""+file
+						w = ginfo_winx: h = ginfo_winy
+					gsel GselMem2
+					//サイズが適切であれば適用
+					if( w == CC_SKIN_SIZE_W )&&( h == CC_SKIN_SIZE_H ){
+						ComboCounterSkinPath = file
+						ObjID = ComboCounterSkinPathInputObjectID
+						objprm ObjID, ComboCounterSkinPath
+						//スキンを読み込み直す
+						celload ""+ComboCounterSkinPath, SCR_CCFONT
+						celdiv SCR_CCFONT, CCFONT_SIZE_W, CCFONT_SIZE_H
+					} else {
+						Titlebar = ""+PROGRAM_NAME
+						Message = "画像の解像度が適切ではありません。\n解像度は"+CC_SKIN_SIZE_W+"x"+CC_SKIN_SIZE_H+"である必要があります。\n"
+						dialog Message, 0, Titlebar
+					}
+				}
+			gsel GselMem
+		return
+
+gmode
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

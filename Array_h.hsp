@@ -1,0 +1,29 @@
+//--------------------------------------------------------------------------------------------------
+//= Array_h.hsp
+//--------------------------------------------------------------------------------------------------
+//	配列 / 変数を初期化
+//--------------------------------------------------------------------------------------------------
+
+	//----------------------------------------------------------------------------------------------
+	//= 各プレイヤーのコンボカウンターおよびアドレス
+	//	実際のアドレスは BaseAddress + ComboCounterAddressTable(x)
+	//----------------------------------------------------------------------------------------------
+		dim ComboCounterBuf,		PLAYER_NUMBER		//コンボカウンターを受け取る配列
+		dim ComboCounterBufMemory,	PLAYER_NUMBER		//Bufの1F前の状態を記録しておく配列
+
+		dim ComboCounterAddress,	PLAYER_NUMBER		//コンボカウンターのアドレスを格納する配列
+		ComboCounterAddress = 0xA2D3C, 0xA2DB0, 0xA2E24, 0xA2E98
+
+		FrameCounterAddress = 0x3BAF4					//シーンの切り替えなどの検出に使用
+
+	//----------------------------------------------------------------------------------------------
+	//= コンボカウンター配列
+	//----------------------------------------------------------------------------------------------
+		ComboCounterShow = FALSE						//TRUE=コンボカウンターを表示する FALSE=非表示
+		dim ComboCounter,				PLAYER_NUMBER
+		dim ComboCounterFlag,			PLAYER_NUMBER
+		ddim ComboCounterPosX,			PLAYER_NUMBER
+		ddim ComboCounterPosY,			PLAYER_NUMBER
+		ddim ComboCounterMoveX,			PLAYER_NUMBER
+		ddim ComboCounterMoveY,			PLAYER_NUMBER
+		dim ComboCounterFrame,			PLAYER_NUMBER
