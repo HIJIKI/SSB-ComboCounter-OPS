@@ -17,9 +17,6 @@
 						SkipEndCheck = TRUE
 					}
 					gosub *__DataSave
-					gosub *__ClearScreen
-					redraw 1
-;					cm_send SCR_SEND
 					end
 				}
 			} else {

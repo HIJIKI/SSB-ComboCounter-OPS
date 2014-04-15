@@ -16,20 +16,27 @@
 	//----------------------------------------------------------------------------------------------
 		#define WAITTIME		16					//1ループのウェイトの長さ(ms)
 		#define INI_FILE_NAME	"ssbcccf.ini"		//iniファイルのパス
-		#define DEFAULT_COMBO_COUNTER_SKIN_PATH "Skin\\DefaultSkin.gif"	//(相対パス)
+		#define DEFAULT_COMBO_COUNTER_SKIN_PATH "Skin\\DefaultSkin.png"	//(相対パス)
+		#define ALPHA_MAP_FILE_PREFIX			"_alpha"	//アルファマップ用画像につけるプレフィックス
 
 	//----------------------------------------------------------------------------------------------
 	//= ウィンドウに関する定数
 	//----------------------------------------------------------------------------------------------
-		#define MAIN_WINDOW_SIZE_W		400			//ウィンドウサイズ横幅
-		#define MAIN_WINDOW_SIZE_H		152
-		#define SEND_WINDOW_SIZE_W		640			//CF へ送信するウィンドウサイズ
-		#define SEND_WINDOW_SIZE_H		480
+		#define MAIN_WINDOW_SIZE_W				400			//ウィンドウサイズ横幅
+		#define MAIN_WINDOW_SIZE_H				152
+		#define DRAFT_WINDOW_SIZE_W				640			//下書きウィンドウのサイズ
+		#define DRAFT_WINDOW_SIZE_H				480
+		#define OPS_WINDOW_DEFAULT_SIZE_W		ginfo_dispx	//OPSのデフォルト確保サイズ
+		#define OPS_WINDOW_DEFAULT_SIZE_H		ginfo_dispy
 
 		//ウィンドウID
 		#enum SCR_MAIN			=0					//メインウィンドウ
-		#enum SCR_SEND								//CameloFilterへ送信するウィンドウ
+		#enum SCR_OPS								//PJ64へ上乗せするウィンドウ
+		#enum SCR_OPS_ALPHA							//OPSウィンドウアルファマップバッファ
+		#enum SCR_DRAFT								//コンボカウンター下書きウィンドウ
+		#enum SCR_DRAFT_ALPHA						//下書きウィンドウアルファマップバッファ
 		#enum SCR_CCFONT							//CCFontのバッファ
+		#enum SCR_CCFONT_ALPHA						//CCFontアルファマップバッファ
 		#enum SCR_SKIN_CHECK						//指定した画像がSkinとして適切かを判断するための一時ウィンドウ
 
 	//----------------------------------------------------------------------------------------------

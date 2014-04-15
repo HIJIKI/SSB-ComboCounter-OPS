@@ -11,8 +11,12 @@
 		//	ComboCounterの内容をCCFontでカレントポジションに描画する。
 		//	0～99まで対応
 		//----------------------------------------------------------------------------------------------
-			#deffunc CCDraw int _cc
-				Text = str(limit(_cc, 0, 99))
+			#deffunc CCDraw int _cc, int _towid, int _ccwid
+				CC		= _cc		//描画するコンボ数
+				ToWID	= _towid	//描画先ウィンドウID
+				CCWID	= _ccwid	//コンボカウンター画像のウィンドウID
+				
+				Text = str(limit(CC, 0, 99))
 				TextLength = strlen(text)
 				//コンボが終了した場合はカウンターを暗く
 				if( ComboCounterBuf@(cnt@) < CCSTART@ ){
@@ -20,7 +24,10 @@
 				} else {
 					shadow = 0
 				}
+				//描画開始
 				x = ginfo_cx	:	y = ginfo_cy
+				GselMem = ginfo_sel
+				gsel ToWID
 				repeat TextLength
 					//1桁の場合は右寄せにする
 					if( TextLength == 1 ){
@@ -30,12 +37,12 @@
 					put = int(strmid(Text, cnt, 1))
 					color ALPHA_COLOR@
 					gmode 4, , , 255
-					celput SCR_CCFONT@, put+shadow
+					celput CCWID, put+shadow
 					x + CCFONT_SIZE_W@
 				loop
 				pos x, y
-				gcopy SCR_CCFONT@, CCFONT_SIZE_W@*10, CCFONT_SIZE_H@*(shadow != 0), CC_HITCOMBO_SIZE_W@, CC_HITCOMBO_SIZE_H@
-
+				gcopy CCWID, CCFONT_SIZE_W@*10, CCFONT_SIZE_H@*(shadow != 0), CC_HITCOMBO_SIZE_W@, CC_HITCOMBO_SIZE_H@
+				gsel GselMem
 			return
 
 		//------------------------------------------------------------------------------------------

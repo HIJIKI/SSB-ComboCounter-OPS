@@ -1,0 +1,290 @@
+/*==================================================================================================
+                                画像ファイルにいろいろするモジュール
+for HSP 3.22            2010.12.30  新規作成
+                        2011. 1. 4  ImgM_GetSize JPG-$C4処理追加
+                                12  ImgM_SetImageData 暫定追加
+                                16  修正：Jpeg Endマーカー無し 対策
+                                    作成：ImgF_GdipPicload,ImgM_GdipPicload
+                                          ImgM_GdipGzoom
+                                    移植：ImgM_CalcFitSize
+                                27  修正：Jpeg MarkerSize不正(NikonD700バグ？)対策
+for HSP 3.3β1                2.16  修正：Jpeg 破損画像 対策
+for HSP 3.22(笑)              4. 7  収穫。
+                              5. 1  修正：ImgM_CalcFitSize 0割り
+for HSP 3.3β3                7.12  作成：ImgM_GdipJpgsave
+for HSP 3.3RC1(正式でてるのに)9.15  作成：ImgM_GdipRotateFlip
+                             11. 3  上記モジュール全て破棄
+
+                画像ファイル操作モジュール２号 ＆ 画像加工モジュール
+for hsp3.3              2011.11. 3  作成：ImgF_PicloadEx
+                             12.20  作成：ImgF_GetPicSize,ImgF_GetFormat,ImgP_CalcFitSize,ImgP_gzoom
+                        2012. 1. 9  移植(コピペ)：ImgF_jpgsave,ImgP_RotateFlip
+                                11  体裁、モジュール化
+----------------------------------------------------------------------------------------------------
+画像ファイルを解析してロード時の画像の大きさを取得する
+    ImgF_GetPicSize  path, sizeX, sizeY
+        path    画像ファイルのパス(memfile命令の擬似ファイルにも対応している)
+                対象は、BMP,JPG,GIF,PNG
+        sizeX,sizeY     大きさを受け取る変数
+        stat    フォーマットタイプを示す数値
+
+画像ファイルを解析してファイルのフォーマットを取得する関数
+    ImgF_GetFormat( path )
+        path    画像ファイルのパス(memfile命令の擬似ファイルにも対応している)
+        戻り    0:不明なフォーマット or 1:BITMAP or 2:JPEG or 3:GIF or 4:PNG
+
+画像ファイルをロードする(GDI+を使ったpicload)
+    ImgF_PicloadEx  path, flag, mode, WinID
+        path    画像ファイルのパス(memfile命令の擬似ファイルにも対応している)
+                BMP,JPG,GIF,PNGなどのGDI+で読み込めるフォーマットであること
+        flag    再初期化フラグ picload命令参照
+        mode    0:標準動作 or 1:bufferで初期化 or 2:screenで初期化 or 3:bgscrで初期化
+        WinID   mode!=0のときの対象WindowのID  -1以下のときは未使用Windowを使う
+
+画面イメージセーブ(JPG編)(GDI+を使ったbmpsaveのJPG版)
+    ImgF_jpgsave  セーブするファイル名, 圧縮率
+        圧縮率  0:高圧縮(粗い)～100:低圧縮(きめ細やか) の整数値
+    Artlet2Dのイメージ保存にjpeg圧縮率指定が無いことに対する措置
+
+----------------------------------------------------------------------------------------------------
+指定領域に収まるように縦横比固定で画像を拡縮する時のサイズを算出する
+    ImgP_CalcFitSize  結果を受け取る変数X, Y, 元画像の大きさX, Y, 領域の大きさX, Y
+
+画像を拡大・縮小コピーする(GDI+を使ったgzoom)(特に拡大で画質が良くなる)
+    ImgP_gzoom  コピー後の大きさX, Y, 元画像のWinID, 元画像の左上位置X, Y, 元画像の大きさX, Y
+
+画像の90°回転や上下左右の反転など(GDI+)
+    ImgP_RotateFlip  mode, 元のWinID, 元の左上X, Y, 元のサイズX, Y
+        mode    0:何もしない            (gcopy状態)
+                1:時計回り 90°回転
+                2:時計回り180°回転     (上下左右反転ともいう)
+                3:時計回り270°回転
+                4:  0°回転後、左右反転 (左右反転というまでもない)
+                5: 90°回転後、左右反転
+                6:180°回転後、左右反転 (上下反転ともいう)
+                7:270°回転後、左右反転
+==================================================================================================*/
+#ifndef ImageFileModuleIncluded
+#define ImageFileModuleIncluded
+#module ImageFileModule
+
+#uselib "gdiplus"
+#func GdiplusStartup        "GdiplusStartup"        var, var, nullptr
+#func GdiplusShutdown       "GdiplusShutdown"       int
+#func GdipCreateFromHDC     "GdipCreateFromHDC"     int, var
+#func GdipDeleteGraphics    "GdipDeleteGraphics"    int
+#func GdipLoadImageFromFile "GdipLoadImageFromFile" wstr, var
+#func GdipSaveImageToFile   "GdipSaveImageToFile"   int, wstr, var, var ;画像をファイルとして保存
+#func GdipLoadImageFromStream "GdipLoadImageFromStream" int, var
+#func GdipSaveImageToStream "GdipSaveImageToStream" int, int, var, var  ;画像を変数に保存(使わないよ)
+#func GdipDrawImageRectI    "GdipDrawImageRectI"    int, int, int, int,int,int
+#func GdipDisposeImage      "GdipDisposeImage"      int
+#func GdipGetImageWidth     "GdipGetImageWidth"     int, var
+#func GdipGetImageHeight    "GdipGetImageHeight"    int, var
+#func GdipCreateBitmapFromGdiDib "GdipCreateBitmapFromGdiDib" int, int, var
+#func GdipDrawImageRectRectI "GdipDrawImageRectRectI" int, int, int, int, int, int, int, int, int, int, int, int, int, int
+
+#uselib "kernel32.dll"
+#func GlobalAlloc   "GlobalAlloc"   int, int
+#func GlobalFree    "GlobalFree"    int
+#func GlobalLock    "GlobalLock"    int
+#func GlobalUnlock  "GlobalUnlock"  int
+#func GlobalSize    "GlobalSize"    int
+#define GMEM_MOVEABLE      2
+#define GMEM_ZEROINIT     64
+#define GMEM_SHARE      8192
+#define GHND              66
+
+#uselib "Ole32.dll"
+#func CreateStreamOnHGlobal "CreateStreamOnHGlobal" int, int, var
+
+#deffunc _ImgF_LoadAndSigCheck str n, array d, var l    ;ファイルのフォーマットチェック＆メモリにロード
+    exist n  : if strsize < 0  : l = 0  : return 0      ;げげげ
+    l = strsize  : sdim d, l  : bload n, d, l           ;読み込み
+    if wpeek(d, 0) == $4D42     : return 1              ;BITMAP     $42='B' , $4D='M'
+    if wpeek(d, 0) == $D8FF     : return 2              ;JPEG       $FF , $D8
+    if lpeek(d, 0) == $38464947 : return 3              ;GIF        $47='G' , $49='I' , $46='F' , $38='8'
+    if lpeek(d, 0) == $474E5089 & lpeek(d, 4) == $0A1A0A0D  : return 4  ;PNG
+                                                ;$89 , $50='P' , $4E='N' , $47='G' , $0D , $0A , $1A , $0A
+    return 0
+
+#deffunc ImgF_GetPicSize str n, var x, var y, local b
+    ib = 0, 0                           ;フォーマットのタイプとデータ総量を代ニューする。
+    _ImgF_LoadAndSigCheck n, b, ib(1)  : ib = stat
+    x = 0  : y = 0                      ;とりあえずぬるぽ。…じゃなくて0を代入
+    if ib == 1 {
+        if lpeek(b, 14) == 40  : x = lpeek(b, 18)  : y =lpeek(b, 22)    ;Windows形式
+    }
+    if ib == 2 {
+        ib(2) = 2   ;offset
+        repeat
+            if ib(1) <= ib(2)  : break  ;アプリクラッシャー(破損ファイル)対策
+            if peek(b, ib(2)) != $FF {  ;Nikonクラッシャー対策
+                ib(2) ++                ;nicoD700nicoのバグ(仕様？)でアプリが堕ちたょ...回避策
+                continue                ;Markerらしきところまでスキップ
+            }
+            ib(3) = peek(b, ib(2) + 1)
+            if ib(3) == $D9  : break    ;ファイル終了のお知らせ
+            if ib(3) == $C0 | ib(3) == $C2 {    ;目的地発見(ハフマンのベースラインかプログレッシブのMarker)
+                ib(4) = wpeek(b, ib(2) + 7), wpeek(b, ib(2) + 5)    ;トラップ発動(高さが先)
+                x = (ib(4) >> 8 & $00FF) | (ib(4) << 8 & $FF00)
+                y = (ib(5) >> 8 & $00FF) | (ib(5) << 8 & $FF00)
+                break
+            }
+            ib(4) = wpeek(b, ib(2) + 2)                         ;それ以外の何かの場合
+            ib(5) = (ib(4) >> 8 & $00FF) | (ib(4) << 8 & $FF00)
+            ib(2) += ib(5) + 2
+        loop
+    }
+    if ib == 3  : x = wpeek(b, 6)  : y = wpeek(b, 8)
+    if ib == 4 {
+        if lpeek(b, 12) == $52444849 {  ;$49='I' , $48='H' , $44='D' , $52='R'  IHDR(ヘッダー)であってしかるべき
+            ib(2) = lpeek(b, 16), lpeek(b, 20)  ;ビッグエンディアンだなんてorz...
+            x = (ib(2) >> 24 & $FF) | (ib(2) >> 8 & $FF00) | (ib(2) << 8 & $FF0000) | (ib(2) << 24 & $FF000000)
+            y = (ib(3) >> 24 & $FF) | (ib(3) >> 8 & $FF00) | (ib(3) << 8 & $FF0000) | (ib(3) << 24 & $FF000000)
+        }
+    }
+    return ib
+
+#defcfunc ImgF_GetFormat str n, local b
+    _ImgF_LoadAndSigCheck n, b, ib
+    return stat
+
+#deffunc ImgF_PicloadEx str s, int f, int m, int w, local h
+    exist s  : if strsize == -1  : return   ;ファイルがない！(取得できないファイル)
+    h  = 0, 0, 0, 0, 0          ;Handles 0:GDIP  1:GlobalMemory  2:Stream  3:Image  4:Screen
+    ib = 1, 0, 0, 0             ;Gdiplus スタートアップステータス
+    GdiplusStartup h(0), ib     ;Gdipスタートアップ
+    ib(0) = 0, 0, 0, 0, 0       ;FileSize, ImageX, Y, 初期化するWinID, 初期化メソッド
+
+    exist s  : ib = strsize
+
+    GlobalAlloc GMEM_ZEROINIT | GMEM_SHARE, ib  : h(1) = stat   ;GM作成
+    GlobalLock h(1)                     ;GMを固定する
+    dupptr dp, stat, ib, 2              ;固定したGMに変数名を割り当てる
+    bload s, dp, ib, 0                  ;割り当てた変数にファイルの内容を流し込む
+    GlobalUnlock h(1)                   ;固定解除
+    CreateStreamOnHGlobal h(1), 0, h(2) ;GMをStream化
+
+    GdipLoadImageFromStream h(2), h(3)  ;StreamからImage生成
+    GdipGetImageWidth  h(3), ib(1)      ;image.横
+    GdipGetImageHeight h(3), ib(2)      ;image.縦
+
+    if f == 0 & m == 0 {                ;通常の初期化
+        mref bmscr, 67
+        ib(3) = ginfo_sel, bmscr.17
+    }
+    if f == 0 & m != 0 {                ;オプション初期化
+        ib(4) = m
+        if 0 <= w  : ib(3) = w  : else  : ib(3) = ginfo_newid
+    }
+    if ib(4) {                          ;結局初期化するの？
+        if ib(4) == 1  : buffer ib(3), ib(1), ib(2)
+        if ib(4) == 2  : screen ib(3), ib(1), ib(2)
+        if ib(4) == 3  : bgscr  ib(3), ib(1), ib(2)
+    }
+
+    GdipCreateFromHDC hdc, h(4)         ;ウィンドウを捕まえて
+    GdipDrawImageRectI h(4), h(3), ginfo_cx, ginfo_cy, ib(1), ib(2) ;コピーする
+    GdipDeleteGraphics  h(4)    ;後始末 ウインドウ
+    GdipDisposeImage    h(3)    ;後始末 Image
+    newcom cb, , -1,    h(2)    ;h(2)はGM開放で一緒に解放される…って
+    delcom cb                   ;  説明するサイトがあるけど嘘っぽい..orz
+    GlobalFree          h(1)    ;後始末 GlobalMemory
+    GdiplusShutdown     h(0)    ;後始末 Gdip
+
+    mref bmscr, 67                          ;BMSCR構造体げとー
+    if bmscr.19 & $FFFF0000  : redraw 1     ;描画反映
+    return
+
+#deffunc ImgF_jpgsave str s, int p, local h
+    dim h, 15
+    h  = 0, 0, $557CF401, $11D31A04, $0000739A, $2EF31EF8, p, 1, $1D5BE4B5, $452DFA4A, $B35DDD9C, $EBE70551, 1, 4, varptr(h) + 24
+    ib = 1, 0, 0, 0
+    mref bmscr, 67
+    GdiplusStartup h(0), ib
+    GdipCreateBitmapFromGdiDib bmscr(6), bmscr(5), h(1)
+    GdipSaveImageToFile h(1), s, h(2), h(7)
+    GdipDisposeImage   h(1) ;Image
+    GdiplusShutdown    h(0) ;Gdip
+    return
+
+; http://www.tvg.ne.jp/menyukko/ ; Copyright(C) 2010-2012 衣日和 All rights reserved.
+#global
+#endif
+//;-----------------------------------------------------------------------------
+#ifndef ImagePrintModuleIncluded
+#define ImagePrintModuleIncluded
+#module ImagePrintModule
+
+#uselib "gdiplus"
+#func GdiplusStartup            "GdiplusStartup"        var, var, nullptr
+#func GdiplusShutdown           "GdiplusShutdown"       int
+#func GdipCreateFromHDC         "GdipCreateFromHDC"     int, var
+#func GdipDeleteGraphics        "GdipDeleteGraphics"    int
+#func GdipDrawImageI            "GdipDrawImageI"        int, int, int, int
+#func GdipDisposeImage          "GdipDisposeImage"      int
+#func GdipCreateBitmapFromGdiDib "GdipCreateBitmapFromGdiDib" int, int, var
+#func GdipDrawImageRectRectI    "GdipDrawImageRectRectI" int, int, int, int, int, int, int, int, int, int, int, int, int, int
+#func GdipImageRotateFlip       "GdipImageRotateFlip"   int, int
+        ;0  RotateNoneFlipNone  Rotate180FlipXY     ;1  Rotate90FlipNone    Rotate270FlipXY
+        ;2  Rotate180FlipNone   RotateNoneFlipXY    ;3  Rotate270FlipNone   Rotate90FlipXY
+        ;4  RotateNoneFlipX     Rotate180FlipY      ;5  Rotate90FlipX       Rotate270FlipY
+        ;6  Rotate180FlipX      RotateNoneFlipY     ;7  Rotate270FlipX      Rotate90FlipY
+#func GdipCloneBitmapAreaI      "GdipCloneBitmapAreaI"  int, int, int, int, int, int, var
+#define PixelFormat32bppARGB 0x0026200A
+
+#deffunc ImgP_CalcFitSize var x, var y, int a, int b, int w, int h
+    if a == 0 | b == 0  : x = 0  : y = 0    : return    ;0割り。
+    ib = w * 10000 / a , h * 10000 / b      ;万分率(笑)‰。
+    if ib <  ib(1)  : x = w                 : y = b * ib / 10000
+    if ib == ib(1)  : x = w                 : y = h
+    if ib >  ib(1)  : x = a * ib(1) / 10000 : y = h
+    if x + 1 == w  : x = w                  ;誤差1pixel
+    if y + 1 == h  : y = h
+    return
+
+; HSPのgzoomをGDIPでやる (画質が良くなる)
+#deffunc ImgP_gzoom int w, int h, int i, int x, int y, int a, int b, local t
+    t = 0, 0, 0
+    ib = 1, 0, 0, 0
+    GdiplusStartup t(0), ib
+
+    ib = ginfo_sel
+    gsel i  : mref bmscr, 67
+
+    GdipCreateBitmapFromGdiDib bmscr(6), bmscr(5), t(1)
+
+    gsel ib
+    GdipCreateFromHDC hdc, t(2)
+
+    GdipDrawImageRectRectI t(2), t(1), ginfo_cx, ginfo_cy, w, h, 0, 0, a, b, 2
+
+    GdipDeleteGraphics t(2)
+    GdipDisposeImage   t(1)
+    GdiplusShutdown    t(0)
+    return
+
+#deffunc ImgP_RotateFlip int m, int i, int x, int y, int w, int h, local t
+    t = 0, 0, 0, 0
+    ib = 1, 0, 0, 0
+    GdiplusStartup t(0), ib
+
+    ib = ginfo_sel  : gsel i  : mref bmscr, 67
+    GdipCreateBitmapFromGdiDib bmscr(6), bmscr(5), t(3)
+    GdipCloneBitmapAreaI x, y, w, h, PixelFormat32bppARGB, t(3), t(1)
+    GdipImageRotateFlip t(1), m
+
+    gsel ib
+    GdipCreateFromHDC hdc, t(2)
+    GdipDrawImageI t(2), t(1), ginfo_cx, ginfo_cy
+
+    GdipDeleteGraphics t(2)
+    GdipDisposeImage   t(3)
+    GdipDisposeImage   t(1)
+    GdiplusShutdown    t(0)
+    return
+
+; http://www.tvg.ne.jp/menyukko/ ; Copyright(C) 2010-2012 衣日和 All rights reserved.
+#global
+#endif

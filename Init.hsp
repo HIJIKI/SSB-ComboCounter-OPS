@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------------------
-//= Init_h.hsp
+//= Init.hsp
 //--------------------------------------------------------------------------------------------------
 //	ウィンドウ / バッファ / コンパイルオプションなどの初期化
 //--------------------------------------------------------------------------------------------------
@@ -8,20 +8,6 @@
 	//= コンパイルオプション
 	//----------------------------------------------------------------------------------------------
 		#packopt hide 1
-
-	//----------------------------------------------------------------------------------------------
-	//= JSWプラグインの初期化
-	//----------------------------------------------------------------------------------------------
-;		cm_init
-		//CameloFilterの設定解像度が正しいか確認
-;		if( cm_info(0) != SEND_WINDOW_SIZE_W )||( cm_info(1) != SEND_WINDOW_SIZE_H ){
-;			Titlebar = "Error"
-;			Message = {"CameloFilter の解像度が正しく設定されていません。
-;						CameloFilter の設定を開き、
-;						解像度を640x480に設定してください。"}
-;			dialog Message, 1, Titlebar
-;			end
-;		}
 
 	//----------------------------------------------------------------------------------------------
 	//= 終了処理ラベルを設定
@@ -85,8 +71,13 @@
 			ComboCounterSkinPath = ""+DEFAULT_COMBO_COUNTER_SKIN_PATH
 		}
 
-		celload ""+ComboCounterSkinPath, SCR_CCFONT
+		skin	= ""+ComboCounterSkinPath
+		alpha	= ""+getpath(skin, 1)+ALPHA_MAP_FILE_PREFIX+getpath(skin, 2)
+		logmes ""+alpha
+		celload ""+skin, SCR_CCFONT
 		celdiv SCR_CCFONT, CCFONT_SIZE_W, CCFONT_SIZE_H
+		celload ""+alpha, SCR_CCFONT_ALPHA
+		celdiv SCR_CCFONT_ALPHA, CCFONT_SIZE_W, CCFONT_SIZE_H
 
 	//----------------------------------------------------------------------------------------------
 	//= PJを実行
@@ -115,24 +106,20 @@
 		dim BaseAddress
 		ReadProcMemory PJProcessID, BASE_ADDRESS_P, BaseAddress, 4
 
-#uselib "user32.dll" 
-	#func tGWLA	 "GetWindowLongA" int , int 
-	#func tSWLA	 "SetWindowLongA" int , int , int 
-	#func tSL	 "SetLayeredWindowAttributes" int , int , int , int 
-	#func tSMA   "SendMessageA"   int , int , int , int
-	#func tPMA   "PostMessageA"   int , int , int , int
-	#func tSC     "SetCapture"     int
-	#func tRC	 "ReleaseCapture"
+	//----------------------------------------------------------------------------------------------
+	//= 下書きウィンドウ初期化
+	//----------------------------------------------------------------------------------------------
+		buffer SCR_DRAFT,		DRAFT_WINDOW_SIZE_W, DRAFT_WINDOW_SIZE_H
+		buffer SCR_DRAFT_ALPHA,	DRAFT_WINDOW_SIZE_W, DRAFT_WINDOW_SIZE_H
 
 	//----------------------------------------------------------------------------------------------
-	//= Sendウィンドウ初期化
+	//= OPSウィンドウ初期化
 	//----------------------------------------------------------------------------------------------
-		bgscr SCR_SEND, SEND_WINDOW_SIZE_W, SEND_WINDOW_SIZE_H
-		gsel SCR_SEND, 2
-
-	tGWLA hwnd , -20 
-	tSWLA hwnd , -20 , stat | 0x00080000
-	tSL hwnd , 0 , 0 , 1
+		GameScreenSizeW = 320
+		GameScreenSizeH = 240
+		buffer	SCR_OPS_ALPHA,	GameScreenSizeW, GameScreenSizeH
+		bgscr	SCR_OPS,		GameScreenSizeW, GameScreenSizeH
+		gsel SCR_OPS, 2
 
 	//----------------------------------------------------------------------------------------------
 	//= メインウィンドウ初期化
