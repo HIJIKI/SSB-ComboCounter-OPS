@@ -5,6 +5,66 @@
 //--------------------------------------------------------------------------------------------------
 	#module _SSBComboCounterModule_
 
+		//------------------------------------------------------------------------------------------
+		//= コンボカウンタースキンを読み込む
+		//------------------------------------------------------------------------------------------
+		//　スキンの読み込みに成功した場合は1 をstatに返す。
+		//------------------------------------------------------------------------------------------
+			#deffunc LoadComboCounterSkin str _path
+				ret = 0
+				GselMem = ginfo_sel
+				//スキンファイルとアルファマップファイル名
+				skin	= ""+_path
+				alpha	= ""+getpath(skin, 1)+ALPHA_MAP_FILE_PREFIX@+getpath(skin, 2)
+				//アルファマップファイルが存在するか確認
+				exist ""+alpha
+				if( strsize != -1 ){
+					AlphaMapFlag = TRUE@
+				} else {
+					AlphaMapFlag = FALSE@
+				}
+				//スキンファイルが存在するか確認
+				exist ""+skin
+				if( strsize != -1 ){
+					buffer SCR_SKIN_CHECK@: picload ""+skin
+					w = ginfo_winx: h = ginfo_winy
+					//サイズが適切であれば読み込む
+					if( w == CC_SKIN_SIZE_W@ )&&( h == CC_SKIN_SIZE_H@ ){
+						celload ""+skin, SCR_CCFONT@
+						celdiv SCR_CCFONT@, CCFONT_SIZE_W@, CCFONT_SIZE_H@
+						//アルファマップ
+						if( AlphaMapFlag == TRUE@ ){
+							celload ""+alpha, SCR_CCFONT_ALPHA@
+						} else {
+							buffer SCR_CCFONT_ALPHA@, CC_SKIN_SIZE_W@, CC_SKIN_SIZE_H@: cls 4
+							for i, 0, CC_SKIN_SIZE_W@, 1
+								for j, 0, CC_SKIN_SIZE_H@, 1
+									gsel SCR_CCFONT@
+									pget i, j
+									if( ginfo_r+ginfo_g+ginfo_b != 0 ){
+										gsel SCR_CCFONT_ALPHA@
+										color 255, 255, 255
+										pset i, j
+									}
+								next
+							next
+						}
+						celdiv SCR_CCFONT_ALPHA@, CCFONT_SIZE_W@, CCFONT_SIZE_H@
+						ComboCounterSkinPath@ = skin
+						ret = 1
+					} else {
+						Titlebar = ""+PROGRAM_NAME@
+						Message = "スキン画像の解像度が適切ではありません。\n解像度は"+CC_SKIN_SIZE_W@+"x"+CC_SKIN_SIZE_H@+"である必要があります。\n"
+						dialog Message, 0, Titlebar
+					}
+				} else {
+					Titlebar = ""+PROGRAM_NAME@
+					Message = "指定されたスキン画像ファイルが存在しないか、または無効なファイルです。"
+					dialog Message, 0, Titlebar
+				}
+				gsel GselMem
+			return ret
+
 		//----------------------------------------------------------------------------------------------
 		//= CCDraw	コンボカウンターを描画する
 		//----------------------------------------------------------------------------------------------

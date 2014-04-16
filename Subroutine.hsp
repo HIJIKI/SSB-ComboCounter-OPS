@@ -20,6 +20,7 @@
 					end
 				}
 			} else {
+				gosub *__DataSave
 				end
 			}
 		return
@@ -150,7 +151,7 @@
 			GselMem = ginfo_sel
 			gsel SCR_MAIN
 				Titlebar = ""+PROGRAM_NAME
-				Message = "コンボカウンターに使用する画像を選択してください。\n画像の解像度は"+CC_SKIN_SIZE_W+"x"+CC_SKIN_SIZE_H+"である必要があります。\nRGB要素がすべて0(完全な黒)の部分は透明色とみなされます。\n詳しくは「Skin作成について.txt」をご覧ください。"
+				Message = "コンボカウンターに使用する画像を選択してください。\n画像の解像度は"+CC_SKIN_SIZE_W+"x"+CC_SKIN_SIZE_H+"である必要があります。\n\nSkinの作成方法については「Skin作成について.txt」をご覧ください。"
 				dialog Message, 0, Titlebar
 				//ファイル選択
 				DirMem = dir_cur
@@ -158,58 +159,11 @@
 				chdir DirMem
 				if( stat == 1 ){
 					file = refstr
-					GselMem2 = ginfo_sel
-					buffer SCR_SKIN_CHECK
-						picload ""+file
-						w = ginfo_winx: h = ginfo_winy
-					gsel GselMem2
-					//サイズが適切であれば適用
-					if( w == CC_SKIN_SIZE_W )&&( h == CC_SKIN_SIZE_H ){
-						ComboCounterSkinPath = file
+					LoadComboCounterSkin file
+					if( stat == 1 ){
 						ObjID = ComboCounterSkinPathInputObjectID
 						objprm ObjID, ComboCounterSkinPath
-						//スキンを読み込み直す
-						celload ""+ComboCounterSkinPath, SCR_CCFONT
-						celdiv SCR_CCFONT, CCFONT_SIZE_W, CCFONT_SIZE_H
-					} else {
-						Titlebar = ""+PROGRAM_NAME
-						Message = "画像の解像度が適切ではありません。\n解像度は"+CC_SKIN_SIZE_W+"x"+CC_SKIN_SIZE_H+"である必要があります。\n"
-						dialog Message, 0, Titlebar
 					}
 				}
 			gsel GselMem
 		return
-
-gmode
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

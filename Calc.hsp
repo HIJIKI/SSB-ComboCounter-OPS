@@ -112,6 +112,7 @@
 			if( PJEndFlag == TRUE ){
 				if( AutoEndFlagSet == TRUE ){
 					if( AutoEnd == TRUE ){
+						gosub *__DataSave
 						end
 					}
 				} else {

@@ -67,17 +67,10 @@
 		//ファイルが存在するか確認
 		exist ""+ComboCounterSkinPath
 		if( strsize == -1 ){
-			//存在しなかった場合デフォルトに戻す
+			//スキンファイルが存在しなかった場合デフォルトに戻す
 			ComboCounterSkinPath = ""+DEFAULT_COMBO_COUNTER_SKIN_PATH
 		}
-
-		skin	= ""+ComboCounterSkinPath
-		alpha	= ""+getpath(skin, 1)+ALPHA_MAP_FILE_PREFIX+getpath(skin, 2)
-		logmes ""+alpha
-		celload ""+skin, SCR_CCFONT
-		celdiv SCR_CCFONT, CCFONT_SIZE_W, CCFONT_SIZE_H
-		celload ""+alpha, SCR_CCFONT_ALPHA
-		celdiv SCR_CCFONT_ALPHA, CCFONT_SIZE_W, CCFONT_SIZE_H
+		LoadComboCounterSkin ComboCounterSkinPath
 
 	//----------------------------------------------------------------------------------------------
 	//= PJを実行
@@ -115,10 +108,11 @@
 	//----------------------------------------------------------------------------------------------
 	//= OPSウィンドウ初期化
 	//----------------------------------------------------------------------------------------------
-		GameScreenSizeW = 320
-		GameScreenSizeH = 240
+		GameScreenSizeW = 640
+		GameScreenSizeH = GameScreenSizeW/10
 		buffer	SCR_OPS_ALPHA,	GameScreenSizeW, GameScreenSizeH
-		bgscr	SCR_OPS,		GameScreenSizeW, GameScreenSizeH
+		bgscr	SCR_OPS,		GameScreenSizeW, GameScreenSizeH, 0, 128, 512
+		enableAlphaBlendWindow SCR_OPS_ALPHA	//メインウィンドウのおブジェクト表示バグ回避
 		gsel SCR_OPS, 2
 
 	//----------------------------------------------------------------------------------------------
@@ -128,35 +122,3 @@
 		title ""+PROGRAM_NAME+" "+PROGRAM_VERSION
 		syscolor 15: boxf
 		gosub *__SettingWindowObjectInit
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		
