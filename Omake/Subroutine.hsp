@@ -1,0 +1,57 @@
+//--------------------------------------------------------------------------------------------------
+//= subroutine.hsp
+//--------------------------------------------------------------------------------------------------
+//	各種サブルーチン
+//--------------------------------------------------------------------------------------------------
+
+	//----------------------------------------------------------------------------------------------
+	//= 終了処理
+	//----------------------------------------------------------------------------------------------
+		*__End
+			end
+
+	//----------------------------------------------------------------------------------------------
+	//= ファイルがドラッグアンドドロップされた
+	//----------------------------------------------------------------------------------------------
+		*__DragAndDrop
+			gsel SCR_MAIN, 1
+			//複数個のDDには対応しない
+			if( DandD_GetInfo(0) != 1 ){
+				Titlebar = "Error"
+				Message = {"複数のファイルがドラッグ&ドロップされました。
+							ファイルは1つずつドラッグ&ドロップしてください。"}
+				dialog Message, 1, Titlebar
+				return
+			}
+			//ドラッグされたファイルのパスを取得
+			FilePath = DandD_GetPath(0)
+			//pngファイルでなかった場合もエラー
+			if( getpath(FilePath, 2) != ".png" ){
+				Titlebar = "Error"
+				Message = {"pngでないファイルがドラッグ&ドロップされました。"}
+				dialog Message, 1, Titlebar
+				return
+			}
+			//pngファイルを読み込み
+			buffer SCR_PNGLOAD:	pngload FilePath
+			dim info, 3:		getpnginfo info
+			w = info(0):		h = info(1)
+			//コンバート
+			alCreateImage 0, w, h
+			alCopyScreenToImage SCR_PNGLOAD, 0, 0, 0, w, h, 0, 0
+			alCreateImage 1, w, h
+			alCopyScreenToImage SCR_PNGLOAD, 1, 0, 0, w, h, w, 0
+			//保存先を指定するダイアログ
+			dialog "png", 17, "PNG"
+			if( stat == 1 ){
+				SavePath = ""+getpath(refstr, 1)	;拡張子はなし
+				alSelectImage 0
+				alSaveFile ""+SavePath+".png"
+				alSelectImage 1
+				alSaveFile ""+SavePath+"_alpha.png"
+				Titlebar = "完了"
+				Message = {"コンバートしました。"}
+				dialog Message, 0, Titlebar
+
+			}
+		return

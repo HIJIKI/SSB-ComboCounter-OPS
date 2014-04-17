@@ -1,0 +1,16 @@
+【はじめに】
+	スキン作成を手助けするためのツールです。
+	スキンの作成についてよくわからない方は、
+	使用する必要はありません。
+
+【これは何？】
+	アルファチャンネル付き透過pngを元に
+	SSB ComboCounter OPS で使用する際のアルファマップ(_alpha)へ変換します。
+
+【使い方】
+	「SSBCCOPS AlphaPNGSkinConverter.exe」を実行して、
+	ウィンドウへ透過pngをドラッグ&ドロップして、そのあとの指示に従ってください。
+
+【同梱サンプル】
+	「InputSample.png」をコンバートした場合の例として、
+	「OutputSample.png」と「OutputSample_alpha.png」を同梱しています。

@@ -1,0 +1,15 @@
+#include "p2b.as"
+cls 2
+dialog "png",16
+if (stat == 0) : end
+
+buffer 1
+pngload refstr
+if (stat == 0) : end
+gsel 0
+
+getpnginfo info
+if info(2) == 1 : gmode 7,info(0),info(1) : else : gmode 0,info(0),info(1)
+
+gcopy 1,0,0
+stop
