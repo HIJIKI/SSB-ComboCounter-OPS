@@ -62,9 +62,11 @@
 		#define CC_HITCOMBO_SIZE_H	42					//コンボカウンターの[Hit Combo]の高さ
 		#define CCSTART				2					//何ヒット目からカウンターを表示させるか
 		#define CC_POS_X			0.0					//コンボカウンターを表示するフレーム内座標X
-		#define	CC_POS_Y			11.0				//Y (DRAFT_WINDOW_SIZE_H/2-CCFONT_SIZE_H/2)
+		#define	CC_POS_Y			11.0				//Y (DRAFT_WINDOW_SIZE_H/2-CCFONT_SIZE_H/2: 中央寄せ)
 		#define CC_DELETE_FRAME		60					//コンボが終了してから何フレームでコンボカウンターを消去するか
 		#define SHAKE_EFFECT_X		-32.0				//コンボカウンターのシェイクエフェクトの移動量X
 		#define SHAKE_EFFECT_Y		0.0					//Y
 		#define CC_SKIN_SIZE_W		385					//コンボカウンターのスキン素材画像横幅
 		#define CC_SKIN_SIZE_H		84					//コンボカウンターのスキン素材画像高さ
+		#define OPS_POS_X			0					//OPSウィンドウをPJのクライアント領域に対してどの位置に描画するかX
+		#define OPS_POS_Y			66					//Y		(これらの値は0-100のパーセントで指定する)

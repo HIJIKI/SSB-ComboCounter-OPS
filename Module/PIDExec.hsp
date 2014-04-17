@@ -32,6 +32,8 @@
 //--------------------------------------------------------------------------------------------------
 #if 0
 	path = "notepad.exe"
-	x = PIDExec(path)
-	input x
+	pid = PIDExec(path)
+	hwn = GetWindowHandle(pid)
+	mes "pid:"+pid
+	mes "hwn:"+hwn
 #endif

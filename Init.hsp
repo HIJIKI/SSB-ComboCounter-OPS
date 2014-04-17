@@ -91,6 +91,14 @@
 		DirMem = dir_cur
 		chdir ""+Project64kDirectoryPath
 		PJProcessID = PIDExec(""+PJFileName)
+		//PJのウィンドウハンドルを取得
+		if( PJFileName == ExistFileName(0) ){
+			ClassName = "Project64k Version 0.13 Core 1.4":	WindowName = "Project64k Version 0.13 Core 1.4"
+		} else {
+			ClassName = "Project64KVE 0.13 Core 1.4      ":	WindowName = "Project64KVE 0.13 Core 1.4      "
+		}
+		FindWindow varptr(ClassName), varptr(WindowName)
+		PJWindowHandle = stat
 		chdir DirMem
 
 	//----------------------------------------------------------------------------------------------
@@ -108,10 +116,8 @@
 	//----------------------------------------------------------------------------------------------
 	//= OPSウィンドウ初期化
 	//----------------------------------------------------------------------------------------------
-		GameScreenSizeW = 640
-		GameScreenSizeH = GameScreenSizeW/10
-		buffer	SCR_OPS_ALPHA,	GameScreenSizeW, GameScreenSizeH
-		bgscr	SCR_OPS,		GameScreenSizeW, GameScreenSizeH, 0, 128, 512
+		buffer	SCR_OPS_ALPHA,	GameScreenW, GameScreenH
+		bgscr	SCR_OPS,		GameScreenW, GameScreenH
 		enableAlphaBlendWindow SCR_OPS_ALPHA	//メインウィンドウのおブジェクト表示バグ回避
 		gsel SCR_OPS, 2
 

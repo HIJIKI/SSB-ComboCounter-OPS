@@ -27,3 +27,11 @@
 		ddim ComboCounterMoveX,			PLAYER_NUMBER
 		ddim ComboCounterMoveY,			PLAYER_NUMBER
 		dim ComboCounterFrame,			PLAYER_NUMBER
+
+	//----------------------------------------------------------------------------------------------
+	//= PJのウィンドウ捕獲用変数 初期値代入
+	//----------------------------------------------------------------------------------------------
+		GameScreenX = 0
+		GameScreenY = 0
+		GameScreenW = 640
+		GameScreenH = GameScreenW/10
