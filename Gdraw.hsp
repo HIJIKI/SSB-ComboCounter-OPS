@@ -33,7 +33,7 @@
 							x = BASE_POS_X+FRAME_SIZE_W*cnt	:	y = BASE_POS_Y
 							pos x+ComboCounterPosX(cnt), y+ComboCounterPosY(cnt)
 							CCDraw ComboCounter(cnt), SCR_DRAFT,		SCR_CCFONT
-							//下書きアルファマップへも描画
+							//下書きアルファマップへもここで描画
 							pos x+ComboCounterPosX(cnt), y+ComboCounterPosY(cnt)
 							CCDraw ComboCounter(cnt), SCR_DRAFT_ALPHA,	SCR_CCFONT_ALPHA
 						}
@@ -81,49 +81,34 @@
 			redraw 1
 
 		//------------------------------------------------------------------------------------------
-		//= ウィンドウ位置/サイズ調整, 表示/非表示
+		//= レイヤードウィンドウ処理, 表示/非表示, ウィンドウ位置/サイズ調整
 		//------------------------------------------------------------------------------------------
-			//PJがアクティブの場合最前面に、そうでない場合は非表示にする
-			GetForegroundWindow: ActiveWindowHandle = stat
-			if( ActiveWindowHandle == PJWindowHandle ){
-				PJWindowActiveFlag = TRUE
-				if( OPSWindowShowFlag == FALSE ){
-					OPSWindowShowFlag = TRUE
-					gsel SCR_OPS, 2
-				}
-			} else {
-				PJWindowActiveFlag = FALSE
-				if( OPSWindowShowFlag == TRUE ){
-					OPSWindowShowFlag = FALSE
-					gsel SCR_OPS, -1
-				}
-			}
-
-			//PJの解像度に合わせてリサイズ
-			dim rect,	4
-			GetClientRect PJWindowHandle, varptr(rect)
-			GameScreenW = rect(2)
-			GameScreenH = GameScreenW*3/4
-			DrawSizeW = limit(GameScreenW, 1, ginfo_dispx)
-			DrawSizeH = limit(DrawSizeW/10, 1, ginfo_dispy)
-			if( ginfo_winx != DrawSizeW )||( ginfo_winy != DrawSizeH ){
-				buffer	SCR_OPS_ALPHA,	DrawSizeW, DrawSizeH
-				bgscr	SCR_OPS,		DrawSizeW, DrawSizeH, 2
-			}
-
-			//PJのウィンドウに位置を合わせる
-			dim position, 2
-			ClientToScreen PJWindowHandle, varptr(position)
-			GameScreenX	= position(0)
-			GameScreenY = position(1)
-			DrawPosX = GameScreenX+(GameScreenW*OPS_POS_X/100)
-			DrawPosY = GameScreenY+(GameScreenH*OPS_POS_Y/100)
-			if( ginfo_wx1 != DrawPosX )||( ginfo_wy1 != DrawPosY ){
-				width ,, DrawPosX, DrawPosY
-			}
-
-		//------------------------------------------------------------------------------------------
-		//= レイヤードウィンドウ処理
-		//------------------------------------------------------------------------------------------
+			//レイヤードウィンドウ処理
 			enableAlphaBlendWindow SCR_OPS_ALPHA
-			gsel SCR_OPS, 1
+
+			if( frame\30 == 0 ){
+				//PJの解像度に合わせてリサイズ
+				dim rect,	4
+				GetClientRect PJWindowHandle, varptr(rect)
+				GameScreenW = rect(2)
+				GameScreenH = GameScreenW*3/4
+				DrawSizeW = limit(GameScreenW, 1, ginfo_dispx)
+				DrawSizeH = limit(DrawSizeW/10, 1, ginfo_dispy)
+				if( ginfo_winx != DrawSizeW )||( ginfo_winy != DrawSizeH ){
+					buffer	SCR_OPS_ALPHA,	DrawSizeW, DrawSizeH
+					bgscr	SCR_OPS,		DrawSizeW, DrawSizeH, 2
+					enableAlphaBlendWindow SCR_OPS_ALPHA
+					gsel	SCR_OPS, 2
+				}
+
+				//PJのウィンドウに位置を合わせる
+				dim position, 2
+				ClientToScreen PJWindowHandle, varptr(position)
+				GameScreenX	= position(0)
+				GameScreenY = position(1)
+				DrawPosX = GameScreenX+(GameScreenW*OPS_POS_X/100)
+				DrawPosY = GameScreenY+(GameScreenH*OPS_POS_Y/100)
+				if( ginfo_wx1 != DrawPosX )||( ginfo_wy1 != DrawPosY ){
+					width ,, DrawPosX, DrawPosY
+				}
+			}

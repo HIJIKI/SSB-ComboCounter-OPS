@@ -158,7 +158,8 @@
 	GetWindowLong hwnd, -20
 	if((stat & WS_EX_LAYERED) == 0) {
 ;		SetWindowLong hwnd,-20, stat | WS_EX_LAYERED
-		SetWindowLong hwnd,-20, stat | WS_EX_LAYERED | $80	;タスクバーに表示しないように
+;		SetWindowLong hwnd,-20, stat | WS_EX_LAYERED | $80	;タスクバーに表示しないように
+		SetWindowLong hwnd,-20, stat | WS_EX_LAYERED | $08000000	;アクティブ非許可ウィンドウ
 	}
 	if((biWidth != ginfo_sx)||(biHeight != ginfo_sy)) {
 		biWidth  = ginfo_sx

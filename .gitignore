@@ -1,0 +1,5 @@
+_garbage/
+obj
+hsptmp
+*.exe
+*.ini
